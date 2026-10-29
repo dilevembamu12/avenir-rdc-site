@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Film de la mission — 70 secondes</title>
+<style>
+  :root{--bleu:#12406B;--gris:#5B6B7B;--bord:#DCE5EE;--fond:#F6F8FB;--blanc:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:#12212F;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
+  header{background:linear-gradient(135deg,#0E3557,#1F6FB2 60%,#2E86C1);color:#fff;padding:40px 32px 34px}
+  header .enveloppe,main{max-width:1080px;margin:0 auto}
+  h1{margin:0 0 8px;font-size:27px}
+  header p{margin:0;opacity:.94;max-width:760px}
+  main{padding:28px 32px 60px}
+  .lecteur{background:var(--blanc);border:1px solid var(--bord);border-radius:14px;padding:18px;
+           display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;box-shadow:0 8px 24px rgba(18,33,47,.06)}
+  video{max-height:74vh;height:auto;border-radius:10px;background:#000;flex:0 0 auto}
+  .fiche{min-width:240px;flex:1}
+  .fiche h2{margin:0 0 8px;font-size:18px;color:var(--bleu)}
+  .fiche dl{margin:0;font-size:14px}
+  .fiche dt{color:var(--gris);font-size:12.5px;text-transform:uppercase;letter-spacing:.5px;margin-top:10px}
+  .fiche dd{margin:2px 0 0}
+  h2.bloc{margin:30px 0 6px;font-size:19px;color:var(--bleu)}
+  .legende{color:var(--gris);font-size:13.5px;margin:0 0 12px}
+  img{max-width:100%;height:auto;border:1px solid var(--bord);border-radius:12px;background:#fff}
+  a.retour{display:inline-block;margin-top:26px;color:#1F6FB2;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="enveloppe">
+    <h1>Film de la mission — 70 secondes</h1>
+    <p>Récit de la campagne AVENIR : ce que les 232 entreprises et les 36 objets cartographiés
+      disent ensemble — et ce qu'il reste à consolider.</p>
+  </div>
+</header>
+<main>
+  <div class="lecteur">
+    <video controls preload="metadata" poster="planche-de-controle.jpg">
+      <source src="video.mp4" type="video/mp4">
+      Votre navigateur ne peut pas lire cette vidéo — le fichier reste téléchargeable :
+      <a href="video.mp4">video.mp4</a>.
+    </video>
+    <div class="fiche">
+      <h2>Fiche technique</h2>
+      <dl>
+        <dt>Durée</dt><dd>70,3 secondes</dd>
+        <dt>Format</dt><dd>1080 × 1920 (vertical), 30 images/s, H.264 + AAC</dd>
+        <dt>Voix</dt><dd>Narration française, sans musique</dd>
+        <dt>Structure</dt><dd>7 scènes : volumes · dispositif · territoire · objets · qualité ·
+          tronçons et zones · suites</dd>
+        <dt>Chiffres clés</dt><dd>232 entreprises · 36 objets · 27 positions · médiane 3,6 m ·
+          6,6 vs 2,0 km · 0,005 à 0,048 ha</dd>
+      </dl>
+    </div>
+  </div>
+    <h2>Planche de contrôle</h2>
+  <p class="legende">Les sept scènes aux moments clés (extraits du rendu).</p>
+  <img src="planche-de-controle.jpg" alt="Planche de contrôle des sept scènes du film">
+
+  <a class="retour" href="../">← Retour à l'accueil du site</a>
+</main>
+</body>
+</html>
