@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photographies de terrain — AVENIR RDC</title>
+<link rel="stylesheet" href="../lib/leaflet/leaflet.css">
+<style>
+  :root{--bleu:#12406B;--bleu2:#1F6FB2;--encre:#12212F;--gris:#5B6B7B;--bord:#DCE5EE;
+         --fond:#F6F8FB;--blanc:#fff;--ambre:#B26B00}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);
+        font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  body.voile-ouvert{overflow:hidden}
+  header{background:linear-gradient(135deg,#0E3557,#1F6FB2 60%,#2E86C1);color:#fff;
+          padding:44px 32px 38px}
+  .enveloppe,main{max-width:1180px;margin:0 auto}
+  h1{margin:0 0 8px;font-size:28px;letter-spacing:-.3px}
+  header p{margin:0;max-width:840px;opacity:.94}
+  main{padding:26px 32px 60px}
+  .barre{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;background:var(--blanc);
+          border:1px solid var(--bord);border-radius:12px;padding:14px 18px;margin-bottom:20px;
+          box-shadow:0 1px 2px rgba(18,33,47,.05),0 8px 20px rgba(18,33,47,.05)}
+  .barre label{font-size:12px;color:var(--gris);display:block;text-transform:uppercase;
+                letter-spacing:.5px;margin-bottom:4px}
+  select,input{font:inherit;padding:7px 10px;border:1px solid var(--bord);border-radius:8px;
+                background:#fff;min-width:190px}
+  .compte{margin-left:auto;font-size:13.5px;color:var(--gris)}
+  .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:18px}
+  figure.photo{margin:0;background:var(--blanc);border:1px solid var(--bord);border-radius:12px;
+                overflow:hidden;box-shadow:0 1px 2px rgba(18,33,47,.05);cursor:pointer;
+                transition:transform .12s ease,box-shadow .12s ease}
+  figure.photo:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(18,33,47,.08),
+                0 14px 28px rgba(18,33,47,.10)}
+  figure.photo:focus-visible{outline:3px solid var(--bleu2);outline-offset:2px}
+  .vignette{position:relative;background:#E9EFF5}
+  .vignette img{display:block;width:100%;height:186px;object-fit:cover}
+  .vignette .loupe{position:absolute;inset:auto 8px 8px auto;background:rgba(9,20,30,.72);
+                color:#fff;font-size:11.5px;padding:3px 9px;border-radius:999px;opacity:0;
+                transition:opacity .12s ease}
+  figure.photo:hover .loupe,figure.photo:focus-visible .loupe{opacity:1}
+  .vignette .pin{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.92);
+                border-radius:999px;font-size:11.5px;padding:2px 8px;color:var(--ambre);
+                font-weight:600}
+  figcaption{padding:10px 12px 12px;font-size:12.5px;color:var(--gris)}
+  figcaption b{display:block;color:var(--bleu);font-size:14px;margin-bottom:2px}
+  figcaption span{display:block}
+  .vide{padding:30px;text-align:center;color:var(--gris)}
+  footer{max-width:1180px;margin:0 auto;padding:0 32px 46px;color:var(--gris);font-size:12.5px}
+  a.retour{display:inline-block;margin-top:22px;color:var(--bleu2);font-weight:600;
+            text-decoration:none}
+  .note{background:#F5F9FD;border-left:4px solid var(--bleu2);padding:12px 16px;
+         border-radius:0 10px 10px 0;font-size:13.5px;color:#243B4E;margin-bottom:20px}
+
+  /* ---------------- panneau de détail ---------------- */
+  #voile{position:fixed;inset:0;background:rgba(9,20,30,.76);z-index:1200;display:none;
+         padding:16px;overflow:auto}
+  #voile.ouvert{display:flex;align-items:center;justify-content:center}
+  #detail{background:var(--blanc);border-radius:14px;width:100%;max-width:1120px;
+          max-height:calc(100vh - 32px);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,.9fr);
+          overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45);position:relative}
+  @media (max-width:900px){#detail{grid-template-columns:1fr;overflow:auto;max-height:none}}
+  .detail-image{position:relative;background:#0B1620;display:flex;align-items:center;
+                justify-content:center;min-height:260px}
+  .detail-image img{display:block;max-width:100%;max-height:calc(100vh - 32px);
+                object-fit:contain}
+  @media (max-width:900px){.detail-image img{max-height:56vh}}
+  .nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;
+       border:0;border-radius:50%;background:rgba(255,255,255,.86);color:#12212F;font-size:22px;
+       line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .nav:hover{background:#fff}
+  .nav[disabled]{opacity:.35;cursor:default}
+  #prec{left:10px} #suiv{right:10px}
+  #compteur{position:absolute;left:12px;bottom:10px;color:#fff;font-size:12px;
+       background:rgba(9,20,30,.6);padding:2px 9px;border-radius:999px}
+  .detail-infos{padding:20px 22px 22px;overflow:auto}
+  .detail-infos h2{margin:0 0 4px;font-size:20px;color:var(--bleu);padding-right:44px}
+  .sous-titre{margin:0 0 12px;color:var(--gris);font-size:13px}
+  #fermer{position:absolute;top:10px;right:10px;width:36px;height:36px;border:0;border-radius:50%;
+       background:rgba(240,244,248,.95);color:#12212F;font-size:20px;line-height:1;cursor:pointer;z-index:3}
+  #fermer:hover{background:#fff}
+  dl.fiche{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;
+       font-size:13.5px}
+  dl.fiche dt{color:var(--gris)}
+  dl.fiche dd{margin:0;color:var(--encre)}
+  .badge{display:inline-block;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:600}
+  .badge.ok{background:#E7F6EC;color:#1E7B34}
+  .badge.moyen{background:#FFF4CE;color:#8A6A00}
+  .badge.faible{background:#FDE8E8;color:#9C1C1C}
+  #bloc-carte{margin:0 0 14px}
+  #detail-carte{height:220px;border:1px solid var(--bord);border-radius:10px;overflow:hidden}
+  .sans-carte{margin:0;padding:12px;background:#F5F9FD;border-radius:10px;font-size:13px;
+       color:var(--gris)}
+  .actions{display:flex;flex-direction:column;gap:8px}
+  .actions a,.actions button{display:block;text-align:center;text-decoration:none;font-weight:600;
+       font-size:13.5px;padding:9px 12px;border-radius:9px;border:1px solid var(--bord);
+       background:#fff;color:var(--bleu2);cursor:pointer;font-family:inherit}
+  .actions a.principal{background:var(--bleu2);border-color:var(--bleu2);color:#fff}
+  .actions a:hover,.actions button:hover{filter:brightness(.97)}
+  .actions a[aria-disabled="true"]{opacity:.45;pointer-events:none}
+  .aide-modale{margin:12px 0 0;font-size:11.5px;color:var(--gris)}
+  .badge-photo{font-size:13px;line-height:20px;text-align:center;
+       filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+</style>
+</head>
+<body>
+<header>
+  <div class="enveloppe">
+    <h1>Photographies prises sur le terrain</h1>
+    <p>88 photographies d'infrastructures relevées avec le formulaire SIG, sur
+      6 territoire(s). Chaque image est celle téléversée par l'enquêteur, réduite
+      pour le web ; seules les photos dont le <strong>consentement a été recueilli</strong> sont
+      publiées. Cliquez une vignette pour la fiche complète et la position sur la carte.</p>
+  </div>
+</header>
+<main>
+  <div class="note"><strong>Méthode.</strong> Photos rattachées à l'objet observé (nom d'usage,
+    type, statut) et à son secteur. Elles documentent l'état de l'infrastructure au jour du
+    relevé ; elles ne constituent pas un inventaire exhaustif. La mini-carte du détail reprend la
+    position relevée au GPS et le rayon de précision annoncé.</div>
+  <div class="barre">
+    <div><label for="f-territoire">Territoire</label>
+      <select id="f-territoire"><option value="">Tous</option><option value="KENGE">KENGE (13)</option><option value="LUKULA">LUKULA (8)</option><option value="MASIMANIMBA">MASIMANIMBA (20)</option><option value="MBANZA NGUNGU">MBANZA NGUNGU (23)</option><option value="MUSHIE">MUSHIE (15)</option><option value="Ville de KIKWIT">Ville de KIKWIT (9)</option></select></div>
+    <div><label for="f-type">Type d'infrastructure</label>
+      <select id="f-type"><option value="">Tous</option><option value="AVEC, tontine, coopérative, association">AVEC, tontine, coopérative, association (5)</option><option value="Agent mobile Banking">Agent mobile Banking (3)</option><option value="Autres (à préciser)">Autres (à préciser) (5)</option><option value="Eau, cours d'eau, irrigation, source d'eau">Eau, cours d'eau, irrigation, source d'eau (2)</option><option value="Marché / Entreprise chef de ville / pôle économique">Marché / Entreprise chef de ville / pôle économique (13)</option><option value="Ouvrage d'art (pont, bac, débarcadère, barrière)">Ouvrage d'art (pont, bac, débarcadère, barrière) (4)</option><option value="Route, piste, voie navigable">Route, piste, voie navigable (12)</option><option value="Service financier">Service financier (16)</option><option value="Télécommunications (antenne, couverture)">Télécommunications (antenne, couverture) (28)</option></select></div>
+    <div><label for="f-recherche">Rechercher</label>
+      <input type="search" id="f-recherche" placeholder="ex. marché, pont, antenne"></div>
+    <div class="compte" id="compte">88 photos</div>
+  </div>
+  <div class="grille" id="grille">
+    <figure class="photo" data-index="0" data-territoire="Ville de KIKWIT"
+             data-type="Route, piste, voie navigable" data-recherche="port kamani-mani commune de lukolela route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : Port kamani-mani">
+      <div class="vignette">
+        <img src="110600_110603_879514348_1_port-kamani-mani.jpg" loading="lazy"
+             alt="Port kamani-mani — Route, piste, voie navigable, Commune de LUKOLELA">
+        <span class="pin" title="-5.04805 ; 18.83703">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Port kamani-mani</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>Commune de LUKOLELA (110603) — Ville de KIKWIT</span>
+        <span>2026-09-27 · 4.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="1" data-territoire="Ville de KIKWIT"
+             data-type="Route, piste, voie navigable" data-recherche="port central de kikwit (onatra) commune de lukolela route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : Port central de kikwit (ONATRA)">
+      <div class="vignette">
+        <img src="110600_110603_879514372_1_port-central-de-kikwit-onatra.jpg" loading="lazy"
+             alt="Port central de kikwit (ONATRA) — Route, piste, voie navigable, Commune de LUKOLELA">
+        <span class="pin" title="-5.03259 ; 18.83497">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Port central de kikwit (ONATRA)</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>Commune de LUKOLELA (110603) — Ville de KIKWIT</span>
+        <span>2026-09-27 · 4.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="2" data-territoire="Ville de KIKWIT"
+             data-type="Service financier" data-recherche="baobab/kikwit commune de lukolela service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Baobab/kikwit">
+      <div class="vignette">
+        <img src="110600_110603_879514400_1_baobab-kikwit.jpg" loading="lazy"
+             alt="Baobab/kikwit — Service financier, Commune de LUKOLELA">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Baobab/kikwit</b>
+        <span>Service financier · En activité</span>
+        <span>Commune de LUKOLELA (110603) — Ville de KIKWIT</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="3" data-territoire="Ville de KIKWIT"
+             data-type="Service financier" data-recherche="advans/kikwit commune de lukolela service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Advans/kikwit">
+      <div class="vignette">
+        <img src="110600_110603_879514424_1_advans-kikwit.jpg" loading="lazy"
+             alt="Advans/kikwit — Service financier, Commune de LUKOLELA">
+        <span class="pin" title="-5.03251 ; 18.83070">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Advans/kikwit</b>
+        <span>Service financier · En activité</span>
+        <span>Commune de LUKOLELA (110603) — Ville de KIKWIT</span>
+        <span>2026-09-27 · 5.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="4" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="airtel commune de pay kongila télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Airtel">
+      <div class="vignette">
+        <img src="111500_111503_879514449_1_airtel.jpg" loading="lazy"
+             alt="Airtel — Télécommunications (antenne, couverture), Commune de PAY KONGILA">
+        <span class="pin" title="-5.44115 ; 18.34309">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Airtel</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>Commune de PAY KONGILA (111503) — MASIMANIMBA</span>
+        <span>2026-09-27 · 4.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="5" data-territoire="MASIMANIMBA"
+             data-type="Eau, cours d'eau, irrigation, source d'eau" data-recherche="sans nom commune de pay kongila eau, cours d'eau, irrigation, source d'eau" tabindex="0" role="button"
+             aria-label="Voir le détail : Sans nom">
+      <div class="vignette">
+        <img src="111500_111503_879514475_1_sans-nom.jpg" loading="lazy"
+             alt="Sans nom — Eau, cours d'eau, irrigation, source d'eau, Commune de PAY KONGILA">
+        <span class="pin" title="-5.20566 ; 18.24114">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Sans nom</b>
+        <span>Eau, cours d'eau, irrigation, source d'eau · En activité</span>
+        <span>Commune de PAY KONGILA (111503) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="6" data-territoire="MASIMANIMBA"
+             data-type="Route, piste, voie navigable" data-recherche="sans nom commune de pay kongila route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : Sans nom">
+      <div class="vignette">
+        <img src="111500_111503_879514500_1_sans-nom.jpg" loading="lazy"
+             alt="Sans nom — Route, piste, voie navigable, Commune de PAY KONGILA">
+        <span class="pin" title="-4.92099 ; 18.20778">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Sans nom</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>Commune de PAY KONGILA (111503) — MASIMANIMBA</span>
+        <span>2026-09-27 · 2.2 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="7" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="radio raki, venus, rfb commune de pay kongila télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Radio RAKI, Venus, RFB">
+      <div class="vignette">
+        <img src="111500_111503_879514551_1_radio-raki-venus-rfb.jpg" loading="lazy"
+             alt="Radio RAKI, Venus, RFB — Télécommunications (antenne, couverture), Commune de PAY KONGILA">
+        <span class="pin" title="-5.45686 ; 18.34190">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Radio RAKI, Venus, RFB</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>Commune de PAY KONGILA (111503) — MASIMANIMBA</span>
+        <span>2026-09-27 · 4.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="8" data-territoire="MASIMANIMBA"
+             data-type="Service financier" data-recherche="sous-division commune de pay kongila service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Sous-division">
+      <div class="vignette">
+        <img src="111500_111503_879514567_1_sous-division.jpg" loading="lazy"
+             alt="Sous-division — Service financier, Commune de PAY KONGILA">
+        <span class="pin" title="-5.44131 ; 18.34241">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Sous-division</b>
+        <span>Service financier · En activité</span>
+        <span>Commune de PAY KONGILA (111503) — MASIMANIMBA</span>
+        <span>2026-09-27 · 4.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="9" data-territoire="MASIMANIMBA"
+             data-type="Service financier" data-recherche="sous division kitoy service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Sous division">
+      <div class="vignette">
+        <img src="111500_111508_879514596_1_sous-division.jpg" loading="lazy"
+             alt="Sous division — Service financier, KITOY">
+        <span class="pin" title="-4.40460 ; 17.81792">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Sous division</b>
+        <span>Service financier · En activité</span>
+        <span>KITOY (111508) — MASIMANIMBA</span>
+        <span>2026-09-27 · 3.3 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="10" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne vodacom kitoy télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne vodacom">
+      <div class="vignette">
+        <img src="111500_111508_879514624_1_antenne-vodacom.jpg" loading="lazy"
+             alt="Antenne vodacom — Télécommunications (antenne, couverture), KITOY">
+        <span class="pin" title="-4.40463 ; 17.81516">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne vodacom</b>
+        <span>Télécommunications (antenne, couverture) · Infrastructure dégradée</span>
+        <span>KITOY (111508) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="11" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="radio en construction kitoy télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Radio en construction">
+      <div class="vignette">
+        <img src="111500_111508_879514657_1_radio-en-construction.jpg" loading="lazy"
+             alt="Radio en construction — Télécommunications (antenne, couverture), KITOY">
+        <span class="pin" title="-4.40368 ; 17.81899">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Radio en construction</b>
+        <span>Télécommunications (antenne, couverture) · Infrastructure dégradée</span>
+        <span>KITOY (111508) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="12" data-territoire="MASIMANIMBA"
+             data-type="Agent mobile Banking" data-recherche="bureau proader kitoy agent mobile banking" tabindex="0" role="button"
+             aria-label="Voir le détail : Bureau PROADER">
+      <div class="vignette">
+        <img src="111500_111508_879514690_1_bureau-proader.jpg" loading="lazy"
+             alt="Bureau PROADER — Agent mobile Banking, KITOY">
+        <span class="pin" title="-4.40522 ; 17.81706">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Bureau PROADER</b>
+        <span>Agent mobile Banking · En activité</span>
+        <span>KITOY (111508) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.3 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="13" data-territoire="MASIMANIMBA"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché de demi gros masi manimba marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Marché de demi gros">
+      <div class="vignette">
+        <img src="111500_111509_879514753_1_marche-de-demi-gros.jpg" loading="lazy"
+             alt="Marché de demi gros — Marché / Entreprise chef de ville / pôle économique, MASI MANIMBA">
+        <span class="pin" title="-4.78522 ; 17.78940">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Marché de demi gros</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · Infrastructure dégradée</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="14" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antennes vodacom et orange masi manimba télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antennes vodacom et orange">
+      <div class="vignette">
+        <img src="111500_111509_879514773_1_antennes-vodacom-et-orange.jpg" loading="lazy"
+             alt="Antennes vodacom et orange — Télécommunications (antenne, couverture), MASI MANIMBA">
+        <span class="pin" title="-4.78646 ; 17.79641">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antennes vodacom et orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="15" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="radio masi manimba télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Radio">
+      <div class="vignette">
+        <img src="111500_111509_879514811_1_radio.jpg" loading="lazy"
+             alt="Radio — Télécommunications (antenne, couverture), MASI MANIMBA">
+        <span class="pin" title="-4.77564 ; 17.86206">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Radio</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.7 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="16" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne vodacom masi manimba télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne vodacom">
+      <div class="vignette">
+        <img src="111500_111509_879514851_1_antenne-vodacom.jpg" loading="lazy"
+             alt="Antenne vodacom — Télécommunications (antenne, couverture), MASI MANIMBA">
+        <span class="pin" title="-4.77495 ; 17.87128">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne vodacom</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 1.4 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="17" data-territoire="MASIMANIMBA"
+             data-type="Service financier" data-recherche="rawbank masi manimba service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Rawbank">
+      <div class="vignette">
+        <img src="111500_111509_879514903_1_rawbank.jpg" loading="lazy"
+             alt="Rawbank — Service financier, MASI MANIMBA">
+        <span class="pin" title="-4.77328 ; 17.88415">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Rawbank</b>
+        <span>Service financier · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 4.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="18" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne orange masi manimba télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne orange">
+      <div class="vignette">
+        <img src="111500_111509_879514950_1_antenne-orange.jpg" loading="lazy"
+             alt="Antenne orange — Télécommunications (antenne, couverture), MASI MANIMBA">
+        <span class="pin" title="-4.76578 ; 17.90974">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 4.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="19" data-territoire="MASIMANIMBA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="radio rtnc, antenne de vodacom masi manimba télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Radio rtnc, antenne de vodacom">
+      <div class="vignette">
+        <img src="111500_111509_879515021_1_radio-rtnc-antenne-de-vodacom.jpg" loading="lazy"
+             alt="Radio rtnc, antenne de vodacom — Télécommunications (antenne, couverture), MASI MANIMBA">
+        <span class="pin" title="-4.77595 ; 17.89385">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Radio rtnc, antenne de vodacom</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 300.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="20" data-territoire="MASIMANIMBA"
+             data-type="Ouvrage d'art (pont, bac, débarcadère, barrière)" data-recherche="bâtiment administratif masi manimba ouvrage d'art (pont, bac, débarcadère, barrière)" tabindex="0" role="button"
+             aria-label="Voir le détail : Bâtiment administratif">
+      <div class="vignette">
+        <img src="111500_111509_879515035_1_batiment-administratif.jpg" loading="lazy"
+             alt="Bâtiment administratif — Ouvrage d'art (pont, bac, débarcadère, barrière), MASI MANIMBA">
+        <span class="pin" title="-4.77265 ; 17.89893">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Bâtiment administratif</b>
+        <span>Ouvrage d'art (pont, bac, débarcadère, barrière) · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 300.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="21" data-territoire="MASIMANIMBA"
+             data-type="Service financier" data-recherche="ekkleza masi manimba service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Ekkleza">
+      <div class="vignette">
+        <img src="111500_111509_879515066_1_ekkleza.jpg" loading="lazy"
+             alt="Ekkleza — Service financier, MASI MANIMBA">
+        <span class="pin" title="-4.76512 ; 17.91411">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Ekkleza</b>
+        <span>Service financier · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 400.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="22" data-territoire="MASIMANIMBA"
+             data-type="Route, piste, voie navigable" data-recherche="route munzabala - kitoyi kitoy route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : ROUTE MUNZABALA - KITOYI">
+      <div class="vignette">
+        <img src="111500_111508_879517610_1_route-munzabala-kitoyi.jpg" loading="lazy"
+             alt="ROUTE MUNZABALA - KITOYI — Route, piste, voie navigable, KITOY">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>ROUTE MUNZABALA - KITOYI</b>
+        <span>Route, piste, voie navigable · Partiellement actif</span>
+        <span>KITOY (111508) — MASIMANIMBA</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="23" data-territoire="Ville de KIKWIT"
+             data-type="Autres (à préciser)" data-recherche="inspection du développement rural commune de lukolela autres (à préciser)" tabindex="0" role="button"
+             aria-label="Voir le détail : inspection du développement rural">
+      <div class="vignette">
+        <img src="110600_110603_879517654_1_inspection-du-developpement-rural.jpg" loading="lazy"
+             alt="inspection du développement rural — Autres (à préciser), Commune de LUKOLELA">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>inspection du développement rural</b>
+        <span>Autres (à préciser) · En activité</span>
+        <span>Commune de LUKOLELA (110603) — Ville de KIKWIT</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="24" data-territoire="Ville de KIKWIT"
+             data-type="Route, piste, voie navigable" data-recherche="(sans nom) commune de kabudi route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : (sans nom)">
+      <div class="vignette">
+        <img src="110600_110605_879517680_1_sans-nom.jpg" loading="lazy"
+             alt="(sans nom) — Route, piste, voie navigable, Commune de KABUDI">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>(sans nom)</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>Commune de KABUDI (110605) — Ville de KIKWIT</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="25" data-territoire="Ville de KIKWIT"
+             data-type="Agent mobile Banking" data-recherche="boutique la clemence commune de kabudi agent mobile banking" tabindex="0" role="button"
+             aria-label="Voir le détail : boutique la clemence">
+      <div class="vignette">
+        <img src="110600_110605_879517706_1_boutique-la-clemence.jpg" loading="lazy"
+             alt="boutique la clemence — Agent mobile Banking, Commune de KABUDI">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>boutique la clemence</b>
+        <span>Agent mobile Banking · En activité</span>
+        <span>Commune de KABUDI (110605) — Ville de KIKWIT</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="26" data-territoire="Ville de KIKWIT"
+             data-type="Service financier" data-recherche="site de la paie à la sous division de epst commune de kabudi service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : site de la paie à la sous division de EPST">
+      <div class="vignette">
+        <img src="110600_110605_879517756_1_site-de-la-paie-a-la-sous-division-de-epst.jpg" loading="lazy"
+             alt="site de la paie à la sous division de EPST — Service financier, Commune de KABUDI">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>site de la paie à la sous division de EPST</b>
+        <span>Service financier · En activité</span>
+        <span>Commune de KABUDI (110605) — Ville de KIKWIT</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="27" data-territoire="Ville de KIKWIT"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne airtel commune de kabudi télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : antenne airtel">
+      <div class="vignette">
+        <img src="110600_110605_879517789_1_antenne-airtel.jpg" loading="lazy"
+             alt="antenne airtel — Télécommunications (antenne, couverture), Commune de KABUDI">
+        <span class="pin" title="aucune coordonnée">⚠ sans position</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>antenne airtel</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>Commune de KABUDI (110605) — Ville de KIKWIT</span>
+        <span>2026-09-27 · précision non renseignée</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="28" data-territoire="MASIMANIMBA"
+             data-type="Agent mobile Banking" data-recherche="ets lumbey masi manimba agent mobile banking" tabindex="0" role="button"
+             aria-label="Voir le détail : Ets lumbey">
+      <div class="vignette">
+        <img src="111500_111509_879579562_1_ets-lumbey.jpg" loading="lazy"
+             alt="Ets lumbey — Agent mobile Banking, MASI MANIMBA">
+        <span class="pin" title="-4.77439 ; 17.89642">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Ets lumbey</b>
+        <span>Agent mobile Banking · En activité</span>
+        <span>MASI MANIMBA (111509) — MASIMANIMBA</span>
+        <span>2026-09-27 · 5.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="29" data-territoire="KENGE"
+             data-type="Route, piste, voie navigable" data-recherche="route kidima 101408 route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : ROUTE KIDIMA">
+      <div class="vignette">
+        <img src="101400_101408_880659239_1_route-kidima.jpg" loading="lazy"
+             alt="ROUTE KIDIMA — Route, piste, voie navigable, 101408">
+        <span class="pin" title="-4.79879 ; 17.38952">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>ROUTE KIDIMA</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>101408 (101408) — KENGE</span>
+        <span>2026-09-28 · 5.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="30" data-territoire="KENGE"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="centre d affaires 101408 marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : CENTRE D AFFAIRES">
+      <div class="vignette">
+        <img src="101400_101408_880659257_1_centre-d-affaires.jpg" loading="lazy"
+             alt="CENTRE D AFFAIRES — Marché / Entreprise chef de ville / pôle économique, 101408">
+        <span class="pin" title="-5.08800 ; 17.37159">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>CENTRE D AFFAIRES</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>101408 (101408) — KENGE</span>
+        <span>2026-09-28 · 6.7 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="31" data-territoire="KENGE"
+             data-type="Autres (à préciser)" data-recherche="entrepôt kidima 101408 autres (à préciser)" tabindex="0" role="button"
+             aria-label="Voir le détail : ENTREPÔT KIDIMA">
+      <div class="vignette">
+        <img src="101400_101408_880659276_1_entrepot-kidima.jpg" loading="lazy"
+             alt="ENTREPÔT KIDIMA — Autres (à préciser), 101408">
+        <span class="pin" title="-5.08735 ; 17.37194">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>ENTREPÔT KIDIMA</b>
+        <span>Autres (à préciser) · En activité</span>
+        <span>101408 (101408) — KENGE</span>
+        <span>2026-09-28 · 4.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="32" data-territoire="KENGE"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="centre d'activité kolokoso marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Centre d'activité">
+      <div class="vignette">
+        <img src="101400_101406_881711744_1_centre-d-activite.jpg" loading="lazy"
+             alt="Centre d'activité — Marché / Entreprise chef de ville / pôle économique, KOLOKOSO">
+        <span class="pin" title="-4.24090 ; 17.54100">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Centre d'activité</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · Partiellement actif</span>
+        <span>KOLOKOSO (101406) — KENGE</span>
+        <span>2026-09-29 · 5.3 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="33" data-territoire="KENGE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="vodacom kolokoso télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Vodacom">
+      <div class="vignette">
+        <img src="101400_101406_882951997_1_vodacom.jpg" loading="lazy"
+             alt="Vodacom — Télécommunications (antenne, couverture), KOLOKOSO">
+        <span class="pin" title="-4.46281 ; 17.41489">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Vodacom</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>KOLOKOSO (101406) — KENGE</span>
+        <span>2026-09-30 · 2.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="34" data-territoire="KENGE"
+             data-type="Route, piste, voie navigable" data-recherche="1 kolokoso route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : 1">
+      <div class="vignette">
+        <img src="101400_101406_882952000_1_1.jpg" loading="lazy"
+             alt="1 — Route, piste, voie navigable, KOLOKOSO">
+        <span class="pin" title="-4.46816 ; 17.41280">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>1</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>KOLOKOSO (101406) — KENGE</span>
+        <span>2026-09-30 · 2.7 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="35" data-territoire="KENGE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="shop nerrhée kolokoso télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Shop Nerrhée">
+      <div class="vignette">
+        <img src="101400_101406_882952005_1_shop-nerrhee.jpg" loading="lazy"
+             alt="Shop Nerrhée — Télécommunications (antenne, couverture), KOLOKOSO">
+        <span class="pin" title="-4.46371 ; 17.41395">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Shop Nerrhée</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>KOLOKOSO (101406) — KENGE</span>
+        <span>2026-09-30 · 3.2 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="36" data-territoire="KENGE"
+             data-type="Eau, cours d'eau, irrigation, source d'eau" data-recherche="snhr kolokoso eau, cours d'eau, irrigation, source d'eau" tabindex="0" role="button"
+             aria-label="Voir le détail : SNHR">
+      <div class="vignette">
+        <img src="101400_101406_882952067_1_snhr.jpg" loading="lazy"
+             alt="SNHR — Eau, cours d'eau, irrigation, source d'eau, KOLOKOSO">
+        <span class="pin" title="-4.46217 ; 17.41342">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>SNHR</b>
+        <span>Eau, cours d'eau, irrigation, source d'eau · En activité</span>
+        <span>KOLOKOSO (101406) — KENGE</span>
+        <span>2026-09-30 · 6.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="37" data-territoire="KENGE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne kolokoso télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne">
+      <div class="vignette">
+        <img src="101400_101406_882952074_1_antenne.jpg" loading="lazy"
+             alt="Antenne — Télécommunications (antenne, couverture), KOLOKOSO">
+        <span class="pin" title="-4.46227 ; 17.41445">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>KOLOKOSO (101406) — KENGE</span>
+        <span>2026-09-30 · 6.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="38" data-territoire="KENGE"
+             data-type="AVEC, tontine, coopérative, association" data-recherche="mfhpek coopec commune de kenge ii avec, tontine, coopérative, association" tabindex="0" role="button"
+             aria-label="Voir le détail : MFHPEK COOPEC">
+      <div class="vignette">
+        <img src="101400_101401_884333059_1_mfhpek-coopec.jpg" loading="lazy"
+             alt="MFHPEK COOPEC — AVEC, tontine, coopérative, association, Commune de KENGE II">
+        <span class="pin" title="-4.82086 ; 17.03964">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>MFHPEK COOPEC</b>
+        <span>AVEC, tontine, coopérative, association · En activité</span>
+        <span>Commune de KENGE II (101401) — KENGE</span>
+        <span>2026-10-02 · 20.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="39" data-territoire="KENGE"
+             data-type="AVEC, tontine, coopérative, association" data-recherche="copak commune de kenge ii avec, tontine, coopérative, association" tabindex="0" role="button"
+             aria-label="Voir le détail : COPAK">
+      <div class="vignette">
+        <img src="101400_101401_884333504_1_copak.jpg" loading="lazy"
+             alt="COPAK — AVEC, tontine, coopérative, association, Commune de KENGE II">
+        <span class="pin" title="-4.81967 ; 17.04047">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>COPAK</b>
+        <span>AVEC, tontine, coopérative, association · En activité</span>
+        <span>Commune de KENGE II (101401) — KENGE</span>
+        <span>2026-10-02 · 300.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="40" data-territoire="KENGE"
+             data-type="Service financier" data-recherche="tmb commune de kenge ii service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : TMB">
+      <div class="vignette">
+        <img src="101400_101401_884333540_1_tmb.jpg" loading="lazy"
+             alt="TMB — Service financier, Commune de KENGE II">
+        <span class="pin" title="-4.82474 ; 17.03571">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>TMB</b>
+        <span>Service financier · En activité</span>
+        <span>Commune de KENGE II (101401) — KENGE</span>
+        <span>2026-10-02 · 45.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="41" data-territoire="KENGE"
+             data-type="AVEC, tontine, coopérative, association" data-recherche="fédération commune de kenge ii avec, tontine, coopérative, association" tabindex="0" role="button"
+             aria-label="Voir le détail : Fédération">
+      <div class="vignette">
+        <img src="101400_101401_884333648_1_federation.jpg" loading="lazy"
+             alt="Fédération — AVEC, tontine, coopérative, association, Commune de KENGE II">
+        <span class="pin" title="-4.82620 ; 17.02716">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Fédération</b>
+        <span>AVEC, tontine, coopérative, association · En activité</span>
+        <span>Commune de KENGE II (101401) — KENGE</span>
+        <span>2026-10-02 · 9.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="42" data-territoire="MUSHIE"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché baboma nord marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : marché">
+      <div class="vignette">
+        <img src="151600_151602_888324852_1_marche.jpg" loading="lazy"
+             alt="marché — Marché / Entreprise chef de ville / pôle économique, BABOMA NORD">
+        <span class="pin" title="-2.77767 ; 16.99427">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>marché</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · Partiellement actif</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-07 · 4.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="43" data-territoire="MUSHIE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne orange baboma nord télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : antenne orange">
+      <div class="vignette">
+        <img src="151600_151602_888324872_1_antenne-orange.jpg" loading="lazy"
+             alt="antenne orange — Télécommunications (antenne, couverture), BABOMA NORD">
+        <span class="pin" title="-2.77837 ; 16.99581">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>antenne orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-07 · 11.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="44" data-territoire="MUSHIE"
+             data-type="Route, piste, voie navigable" data-recherche="route mbala 2 - mushi baboma nord route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : route mbala 2 - mushi">
+      <div class="vignette">
+        <img src="151600_151602_888324884_1_route-mbala-2-mushi.jpg" loading="lazy"
+             alt="route mbala 2 - mushi — Route, piste, voie navigable, BABOMA NORD">
+        <span class="pin" title="-2.77789 ; 16.99261">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>route mbala 2 - mushi</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-07 · 4.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="45" data-territoire="MUSHIE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne vodacom baboma nord télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : antenne vodacom">
+      <div class="vignette">
+        <img src="151600_151602_888978161_1_antenne-vodacom.jpg" loading="lazy"
+             alt="antenne vodacom — Télécommunications (antenne, couverture), BABOMA NORD">
+        <span class="pin" title="-2.97065 ; 17.09804">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>antenne vodacom</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-08 · 9.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="46" data-territoire="MUSHIE"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marche ndjokele baboma nord marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : marche ndjokele">
+      <div class="vignette">
+        <img src="151600_151602_888979118_1_marche-ndjokele.jpg" loading="lazy"
+             alt="marche ndjokele — Marché / Entreprise chef de ville / pôle économique, BABOMA NORD">
+        <span class="pin" title="-2.97124 ; 17.09679">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>marche ndjokele</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · Partiellement actif</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-08 · 4.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="47" data-territoire="MUSHIE"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="chez le chef du village baboma nord marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : chez le chef du village">
+      <div class="vignette">
+        <img src="151600_151602_889211739_1_chez-le-chef-du-village.jpg" loading="lazy"
+             alt="chez le chef du village — Marché / Entreprise chef de ville / pôle économique, BABOMA NORD">
+        <span class="pin" title="-2.97376 ; 17.09672">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>chez le chef du village</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-08 · 5.2 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="48" data-territoire="MUSHIE"
+             data-type="Route, piste, voie navigable" data-recherche="tronçon ndjokele mushi sur la rivière mfimi baboma nord route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : tronçon ndjokele mushi sur la rivière mfimi">
+      <div class="vignette">
+        <img src="151600_151602_889211754_1_troncon-ndjokele-mushi-sur-la-riviere-mfimi.jpg" loading="lazy"
+             alt="tronçon ndjokele mushi sur la rivière mfimi — Route, piste, voie navigable, BABOMA NORD">
+        <span class="pin" title="-2.97475 ; 17.09822">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>tronçon ndjokele mushi sur la rivière mfimi</b>
+        <span>Route, piste, voie navigable · Partiellement actif</span>
+        <span>BABOMA NORD (151602) — MUSHIE</span>
+        <span>2026-10-08 · 3.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="49" data-territoire="MUSHIE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne vodacom commune de mushie télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : antenne vodacom">
+      <div class="vignette">
+        <img src="151600_151601_889835496_1_antenne-vodacom.jpg" loading="lazy"
+             alt="antenne vodacom — Télécommunications (antenne, couverture), Commune de MUSHIE">
+        <span class="pin" title="-3.00768 ; 16.93058">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>antenne vodacom</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-09 · 4.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="50" data-territoire="MUSHIE"
+             data-type="Route, piste, voie navigable" data-recherche="piste aérodrome devenu la brousse commune de mushie route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : piste aérodrome devenu la brousse">
+      <div class="vignette">
+        <img src="151600_151601_889843751_1_piste-aerodrome-devenu-la-brousse.jpg" loading="lazy"
+             alt="piste aérodrome devenu la brousse — Route, piste, voie navigable, Commune de MUSHIE">
+        <span class="pin" title="-3.00933 ; 16.92600">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>piste aérodrome devenu la brousse</b>
+        <span>Route, piste, voie navigable · Infrastructure dégradée</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-09 · 3.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="51" data-territoire="MUSHIE"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne orange commune de mushie télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : antenne orange">
+      <div class="vignette">
+        <img src="151600_151601_892769811_1_antenne-orange.jpg" loading="lazy"
+             alt="antenne orange — Télécommunications (antenne, couverture), Commune de MUSHIE">
+        <span class="pin" title="-3.01007 ; 16.92339">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>antenne orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-13 · 3.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="52" data-territoire="MUSHIE"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché central de mushi commune de mushie marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : marché central de mushi">
+      <div class="vignette">
+        <img src="151600_151601_892769863_1_marche-central-de-mushi.jpg" loading="lazy"
+             alt="marché central de mushi — Marché / Entreprise chef de ville / pôle économique, Commune de MUSHIE">
+        <span class="pin" title="-3.01014 ; 16.92283">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>marché central de mushi</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-13 · 7.3 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="53" data-territoire="MUSHIE"
+             data-type="Autres (à préciser)" data-recherche="bureau et centre commune de mushie autres (à préciser)" tabindex="0" role="button"
+             aria-label="Voir le détail : bureau et centre">
+      <div class="vignette">
+        <img src="151600_151601_892769881_1_bureau-et-centre.jpg" loading="lazy"
+             alt="bureau et centre — Autres (à préciser), Commune de MUSHIE">
+        <span class="pin" title="-3.01094 ; 16.92413">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>bureau et centre</b>
+        <span>Autres (à préciser) · En activité</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-13 · 5.7 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="54" data-territoire="MUSHIE"
+             data-type="Autres (à préciser)" data-recherche="eglise catholique commune de mushie autres (à préciser)" tabindex="0" role="button"
+             aria-label="Voir le détail : eglise catholique">
+      <div class="vignette">
+        <img src="151600_151601_892769899_1_eglise-catholique.jpg" loading="lazy"
+             alt="eglise catholique — Autres (à préciser), Commune de MUSHIE">
+        <span class="pin" title="-3.01657 ; 16.92713">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>eglise catholique</b>
+        <span>Autres (à préciser) · Partiellement actif</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-13 · 3.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="55" data-territoire="MUSHIE"
+             data-type="Route, piste, voie navigable" data-recherche="port de mushi commune de mushie route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : port de mushi">
+      <div class="vignette">
+        <img src="151600_151601_892769919_1_port-de-mushi.jpg" loading="lazy"
+             alt="port de mushi — Route, piste, voie navigable, Commune de MUSHIE">
+        <span class="pin" title="-3.02493 ; 16.92320">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>port de mushi</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-13 · 8.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="56" data-territoire="MUSHIE"
+             data-type="Route, piste, voie navigable" data-recherche="tronçon mushi nioki commune de mushie route, piste, voie navigable" tabindex="0" role="button"
+             aria-label="Voir le détail : tronçon mushi nioki">
+      <div class="vignette">
+        <img src="151600_151601_892770006_1_troncon-mushi-nioki.jpg" loading="lazy"
+             alt="tronçon mushi nioki — Route, piste, voie navigable, Commune de MUSHIE">
+        <span class="pin" title="-3.02632 ; 16.92514">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>tronçon mushi nioki</b>
+        <span>Route, piste, voie navigable · En activité</span>
+        <span>Commune de MUSHIE (151601) — MUSHIE</span>
+        <span>2026-10-13 · 4.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="57" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="orange kivulu télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Orange">
+      <div class="vignette">
+        <img src="091600_091606_896923817_1_orange.jpg" loading="lazy"
+             alt="Orange — Télécommunications (antenne, couverture), KIVULU">
+        <span class="pin" title="-5.31524 ; 15.09734">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Orange</b>
+        <span>Télécommunications (antenne, couverture) · Infrastructure dégradée</span>
+        <span>KIVULU (091606) — MBANZA NGUNGU</span>
+        <span>2026-10-19 · 4.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="58" data-territoire="MBANZA NGUNGU"
+             data-type="Ouvrage d'art (pont, bac, débarcadère, barrière)" data-recherche="mawunzi kivulu ouvrage d'art (pont, bac, débarcadère, barrière)" tabindex="0" role="button"
+             aria-label="Voir le détail : Mawunzi">
+      <div class="vignette">
+        <img src="091600_091606_896923831_1_mawunzi.jpg" loading="lazy"
+             alt="Mawunzi — Ouvrage d'art (pont, bac, débarcadère, barrière), KIVULU">
+        <span class="pin" title="-5.31656 ; 15.09756">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Mawunzi</b>
+        <span>Ouvrage d'art (pont, bac, débarcadère, barrière) · À l'arrêt</span>
+        <span>KIVULU (091606) — MBANZA NGUNGU</span>
+        <span>2026-10-19 · 5.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="59" data-territoire="MBANZA NGUNGU"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché mbanza ngoyo ntimansi marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Marché mbanza ngoyo">
+      <div class="vignette">
+        <img src="091600_091609_897556629_1_marche-mbanza-ngoyo.jpg" loading="lazy"
+             alt="Marché mbanza ngoyo — Marché / Entreprise chef de ville / pôle économique, NTIMANSI">
+        <span class="pin" title="-5.13013 ; 14.50808">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Marché mbanza ngoyo</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>NTIMANSI (091609) — MBANZA NGUNGU</span>
+        <span>2026-10-20 · 1.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="60" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="shop maman niangu ntimansi télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Shop maman niangu">
+      <div class="vignette">
+        <img src="091600_091609_897556636_1_shop-maman-niangu.jpg" loading="lazy"
+             alt="Shop maman niangu — Télécommunications (antenne, couverture), NTIMANSI">
+        <span class="pin" title="-5.13042 ; 14.50870">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Shop maman niangu</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>NTIMANSI (091609) — MBANZA NGUNGU</span>
+        <span>2026-10-20 · 5.2 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="61" data-territoire="MBANZA NGUNGU"
+             data-type="Ouvrage d'art (pont, bac, débarcadère, barrière)" data-recherche="bureau du secteur ntimansi ntimansi ouvrage d'art (pont, bac, débarcadère, barrière)" tabindex="0" role="button"
+             aria-label="Voir le détail : Bureau du secteur ntimansi">
+      <div class="vignette">
+        <img src="091600_091609_897556657_1_bureau-du-secteur-ntimansi.jpg" loading="lazy"
+             alt="Bureau du secteur ntimansi — Ouvrage d'art (pont, bac, débarcadère, barrière), NTIMANSI">
+        <span class="pin" title="-5.13228 ; 14.51566">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Bureau du secteur ntimansi</b>
+        <span>Ouvrage d'art (pont, bac, débarcadère, barrière) · En activité</span>
+        <span>NTIMANSI (091609) — MBANZA NGUNGU</span>
+        <span>2026-10-20 · 4.3 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="62" data-territoire="MBANZA NGUNGU"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché nkolo boko marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Marché nkolo">
+      <div class="vignette">
+        <img src="091600_091603_898388096_1_marche-nkolo.jpg" loading="lazy"
+             alt="Marché nkolo — Marché / Entreprise chef de ville / pôle économique, BOKO">
+        <span class="pin" title="-5.44443 ; 14.87362">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Marché nkolo</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-21 · 1.3 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="63" data-territoire="MBANZA NGUNGU"
+             data-type="AVEC, tontine, coopérative, association" data-recherche="paroisse sacré cœur boko avec, tontine, coopérative, association" tabindex="0" role="button"
+             aria-label="Voir le détail : Paroisse sacré cœur">
+      <div class="vignette">
+        <img src="091600_091603_898388106_1_paroisse-sacre-cur.jpg" loading="lazy"
+             alt="Paroisse sacré cœur — AVEC, tontine, coopérative, association, BOKO">
+        <span class="pin" title="-5.44541 ; 14.87423">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Paroisse sacré cœur</b>
+        <span>AVEC, tontine, coopérative, association · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-21 · 1.7 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="64" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne orange boko télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne Orange">
+      <div class="vignette">
+        <img src="091600_091603_898388117_1_antenne-orange.jpg" loading="lazy"
+             alt="Antenne Orange — Télécommunications (antenne, couverture), BOKO">
+        <span class="pin" title="-5.44574 ; 14.87285">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne Orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-21 · 4.9 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="65" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne airtel boko télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne airtel">
+      <div class="vignette">
+        <img src="091600_091603_899144064_1_antenne-airtel.jpg" loading="lazy"
+             alt="Antenne airtel — Télécommunications (antenne, couverture), BOKO">
+        <span class="pin" title="-5.22147 ; 14.92216">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne airtel</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-22 · 3.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="66" data-territoire="MBANZA NGUNGU"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché boko boko marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Marché boko">
+      <div class="vignette">
+        <img src="091600_091603_899144086_1_marche-boko.jpg" loading="lazy"
+             alt="Marché boko — Marché / Entreprise chef de ville / pôle économique, BOKO">
+        <span class="pin" title="-5.22043 ; 14.92439">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Marché boko</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · À l'arrêt</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-22 · 1.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="67" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="orange boko télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Orange">
+      <div class="vignette">
+        <img src="091600_091603_899144114_1_orange.jpg" loading="lazy"
+             alt="Orange — Télécommunications (antenne, couverture), BOKO">
+        <span class="pin" title="-5.24362 ; 14.88432">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-22 · 3.4 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="68" data-territoire="MBANZA NGUNGU"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="bureau territoire boko marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Bureau territoire">
+      <div class="vignette">
+        <img src="091600_091603_900427255_1_bureau-territoire.jpg" loading="lazy"
+             alt="Bureau territoire — Marché / Entreprise chef de ville / pôle économique, BOKO">
+        <span class="pin" title="-5.26254 ; 14.85863">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Bureau territoire</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 5.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="69" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="mb/ng boko service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : MB/NG">
+      <div class="vignette">
+        <img src="091600_091603_900427265_1_mb-ng.jpg" loading="lazy"
+             alt="MB/NG — Service financier, BOKO">
+        <span class="pin" title="-5.25727 ; 14.85500">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>MB/NG</b>
+        <span>Service financier · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 2.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="70" data-territoire="MBANZA NGUNGU"
+             data-type="Autres (à préciser)" data-recherche="antenne de mbanza ngungu boko autres (à préciser)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne de Mbanza ngungu">
+      <div class="vignette">
+        <img src="091600_091603_900427275_1_antenne-de-mbanza-ngungu.jpg" loading="lazy"
+             alt="Antenne de Mbanza ngungu — Autres (à préciser), BOKO">
+        <span class="pin" title="-5.25704 ; 14.85501">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne de Mbanza ngungu</b>
+        <span>Autres (à préciser) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 9.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="71" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="shop vodacom boko télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Shop vodacom">
+      <div class="vignette">
+        <img src="091600_091603_900427280_1_shop-vodacom.jpg" loading="lazy"
+             alt="Shop vodacom — Télécommunications (antenne, couverture), BOKO">
+        <span class="pin" title="-5.25749 ; 14.86050">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Shop vodacom</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 5.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="72" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="équity bcdc boko service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Équity BCDC">
+      <div class="vignette">
+        <img src="091600_091603_900427289_1_equity-bcdc.jpg" loading="lazy"
+             alt="Équity BCDC — Service financier, BOKO">
+        <span class="pin" title="-5.25793 ; 14.86050">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Équity BCDC</b>
+        <span>Service financier · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 87.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="73" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="shop orange boko télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Shop Orange">
+      <div class="vignette">
+        <img src="091600_091603_900427301_1_shop-orange.jpg" loading="lazy"
+             alt="Shop Orange — Télécommunications (antenne, couverture), BOKO">
+        <span class="pin" title="-5.25586 ; 14.86097">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Shop Orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 100.0 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="74" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="cuilgal boko service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Cuilgal">
+      <div class="vignette">
+        <img src="091600_091603_900427308_1_cuilgal.jpg" loading="lazy"
+             alt="Cuilgal — Service financier, BOKO">
+        <span class="pin" title="-5.25614 ; 14.86117">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Cuilgal</b>
+        <span>Service financier · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 1.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="75" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="camec boko service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : CAMEC">
+      <div class="vignette">
+        <img src="091600_091603_900427321_1_camec.jpg" loading="lazy"
+             alt="CAMEC — Service financier, BOKO">
+        <span class="pin" title="-5.25545 ; 14.86126">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>CAMEC</b>
+        <span>Service financier · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 7.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="76" data-territoire="MBANZA NGUNGU"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="shop airtel boko télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Shop airtel">
+      <div class="vignette">
+        <img src="091600_091603_900427328_1_shop-airtel.jpg" loading="lazy"
+             alt="Shop airtel — Télécommunications (antenne, couverture), BOKO">
+        <span class="pin" title="-5.25525 ; 14.86144">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Shop airtel</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>BOKO (091603) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 3.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="77" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="agence kwili ngongo kwilu ngongo service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : Agence kwili ngongo">
+      <div class="vignette">
+        <img src="091600_091607_900432280_1_agence-kwili-ngongo.jpg" loading="lazy"
+             alt="Agence kwili ngongo — Service financier, KWILU NGONGO">
+        <span class="pin" title="-5.50889 ; 14.70018">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Agence kwili ngongo</b>
+        <span>Service financier · En activité</span>
+        <span>KWILU NGONGO (091607) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 4.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="78" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="camec kwilu ngongo kwilu ngongo service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : CAMEC kwilu ngongo">
+      <div class="vignette">
+        <img src="091600_091607_900432300_1_camec-kwilu-ngongo.jpg" loading="lazy"
+             alt="CAMEC kwilu ngongo — Service financier, KWILU NGONGO">
+        <span class="pin" title="-5.50359 ; 14.68524">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>CAMEC kwilu ngongo</b>
+        <span>Service financier · En activité</span>
+        <span>KWILU NGONGO (091607) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 7.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="79" data-territoire="MBANZA NGUNGU"
+             data-type="Service financier" data-recherche="coopec mk kwilu ngongo service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : COOPEC MK">
+      <div class="vignette">
+        <img src="091600_091607_900432310_1_coopec-mk.jpg" loading="lazy"
+             alt="COOPEC MK — Service financier, KWILU NGONGO">
+        <span class="pin" title="-5.50014 ; 14.68452">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>COOPEC MK</b>
+        <span>Service financier · En activité</span>
+        <span>KWILU NGONGO (091607) — MBANZA NGUNGU</span>
+        <span>2026-10-24 · 4.6 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="80" data-territoire="LUKULA"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="marché nzobe tsanga-sud marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : Marché Nzobe">
+      <div class="vignette">
+        <img src="091300_091305_902113019_1_marche-nzobe.jpg" loading="lazy"
+             alt="Marché Nzobe — Marché / Entreprise chef de ville / pôle économique, TSANGA-SUD">
+        <span class="pin" title="-5.34781 ; 13.02292">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Marché Nzobe</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>TSANGA-SUD (091305) — LUKULA</span>
+        <span>2026-10-27 · 1.8 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="81" data-territoire="LUKULA"
+             data-type="Ouvrage d'art (pont, bac, débarcadère, barrière)" data-recherche="siège tsanga-sud ouvrage d'art (pont, bac, débarcadère, barrière)" tabindex="0" role="button"
+             aria-label="Voir le détail : Siège">
+      <div class="vignette">
+        <img src="091300_091305_902113088_1_siege.jpg" loading="lazy"
+             alt="Siège — Ouvrage d'art (pont, bac, débarcadère, barrière), TSANGA-SUD">
+        <span class="pin" title="-5.34838 ; 13.02285">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Siège</b>
+        <span>Ouvrage d'art (pont, bac, débarcadère, barrière) · En activité</span>
+        <span>TSANGA-SUD (091305) — LUKULA</span>
+        <span>2026-10-27 · 2.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="82" data-territoire="LUKULA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="rtcnk tsanga-sud télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : RTCNK">
+      <div class="vignette">
+        <img src="091300_091305_902113129_1_rtcnk.jpg" loading="lazy"
+             alt="RTCNK — Télécommunications (antenne, couverture), TSANGA-SUD">
+        <span class="pin" title="-5.34330 ; 13.02482">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>RTCNK</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>TSANGA-SUD (091305) — LUKULA</span>
+        <span>2026-10-27 · 5.5 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="83" data-territoire="LUKULA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="lokole patu télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Lokole">
+      <div class="vignette">
+        <img src="091300_091304_902986918_1_lokole.jpg" loading="lazy"
+             alt="Lokole — Télécommunications (antenne, couverture), PATU">
+        <span class="pin" title="-5.44229 ; 12.90030">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Lokole</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>PATU (091304) — LUKULA</span>
+        <span>2026-10-28 · 4.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="84" data-territoire="LUKULA"
+             data-type="Télécommunications (antenne, couverture)" data-recherche="antenne orange cité de lukula télécommunications (antenne, couverture)" tabindex="0" role="button"
+             aria-label="Voir le détail : Antenne Orange">
+      <div class="vignette">
+        <img src="091300_091307_903728835_1_antenne-orange.jpg" loading="lazy"
+             alt="Antenne Orange — Télécommunications (antenne, couverture), Cité de LUKULA">
+        <span class="pin" title="-5.38606 ; 12.93688">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Antenne Orange</b>
+        <span>Télécommunications (antenne, couverture) · En activité</span>
+        <span>Cité de LUKULA (091307) — LUKULA</span>
+        <span>2026-10-29 · 2.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="85" data-territoire="LUKULA"
+             data-type="Service financier" data-recherche="coopec cac lukula cité de lukula service financier" tabindex="0" role="button"
+             aria-label="Voir le détail : COOPEC CAC LUKULA">
+      <div class="vignette">
+        <img src="091300_091307_903728856_1_coopec-cac-lukula.jpg" loading="lazy"
+             alt="COOPEC CAC LUKULA — Service financier, Cité de LUKULA">
+        <span class="pin" title="-5.39316 ; 12.93940">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>COOPEC CAC LUKULA</b>
+        <span>Service financier · En activité</span>
+        <span>Cité de LUKULA (091307) — LUKULA</span>
+        <span>2026-10-29 · 5.1 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="86" data-territoire="LUKULA"
+             data-type="AVEC, tontine, coopérative, association" data-recherche="bureau adm du territoire lukula cité de lukula avec, tontine, coopérative, association" tabindex="0" role="button"
+             aria-label="Voir le détail : Bureau adm du territoire lukula">
+      <div class="vignette">
+        <img src="091300_091307_903728885_1_bureau-adm-du-territoire-lukula.jpg" loading="lazy"
+             alt="Bureau adm du territoire lukula — AVEC, tontine, coopérative, association, Cité de LUKULA">
+        <span class="pin" title="-5.38823 ; 12.94130">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>Bureau adm du territoire lukula</b>
+        <span>AVEC, tontine, coopérative, association · En activité</span>
+        <span>Cité de LUKULA (091307) — LUKULA</span>
+        <span>2026-10-29 · 3.4 m</span>
+      </figcaption>
+    </figure>
+    <figure class="photo" data-index="87" data-territoire="LUKULA"
+             data-type="Marché / Entreprise chef de ville / pôle économique" data-recherche="rmb cité de lukula marché / entreprise chef de ville / pôle économique" tabindex="0" role="button"
+             aria-label="Voir le détail : RMB">
+      <div class="vignette">
+        <img src="091300_091307_903764771_1_rmb.jpg" loading="lazy"
+             alt="RMB — Marché / Entreprise chef de ville / pôle économique, Cité de LUKULA">
+        <span class="pin" title="-5.38455 ; 12.93475">📍 position relevée</span><span class="loupe">Voir le détail</span>
+      </div>
+      <figcaption>
+        <b>RMB</b>
+        <span>Marché / Entreprise chef de ville / pôle économique · En activité</span>
+        <span>Cité de LUKULA (091307) — LUKULA</span>
+        <span>2026-10-29 · 5.2 m</span>
+      </figcaption>
+    </figure>
+    <p class="vide" id="vide" style="display:none">Aucune photo ne correspond au filtre.</p>
+  </div>
+  <a class="retour" href="../recit/">← Récit de données</a> ·
+  <a class="retour" href="../">Accueil du site</a>
+</main>
+<footer>
+  Source : formulaire SIG (pièces jointes KoBo), extraction du 07/11/2026 15:14. Document de travail
+  BECON / Projet AVENIR RDC. Crédits photographiques : équipes d'enquête.
+</footer>
+
+<div id="voile" aria-hidden="true">
+  <div id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-titre">
+    <button id="fermer" type="button" aria-label="Fermer la fiche (Échap)">×</button>
+    <div class="detail-image">
+      <img id="detail-img" alt="">
+      <button class="nav" id="prec" type="button" aria-label="Photo précédente">‹</button>
+      <button class="nav" id="suiv" type="button" aria-label="Photo suivante">›</button>
+      <span id="compteur"></span>
+    </div>
+    <div class="detail-infos">
+      <h2 id="detail-titre"></h2>
+      <p class="sous-titre" id="detail-sous"></p>
+      <dl class="fiche" id="detail-fiche"></dl>
+      <div id="bloc-carte">
+        <div id="detail-carte"></div>
+      </div>
+      <div class="actions">
+        <a class="principal" id="lien-recit" href="../recit/">Ouvrir dans la carte du récit →</a>
+        <a id="lien-image" href="#" target="_blank" rel="noopener">Ouvrir l'image en grand ↗</a>
+        <a id="lien-objet" href="../donnees/" target="_blank" rel="noopener">Données SIG de l'objet</a>
+      </div>
+      <p class="aide-modale">← → pour passer d'une photo à l'autre · Échap pour fermer ·
+        l'adresse de la fiche est copiable (elle contient le nom du fichier).</p>
+    </div>
+  </div>
+</div>
+
+<script id="donnees-photos" type="application/json">[{"fichier": "110600_110603_879514348_1_port-kamani-mani.jpg", "nom": "Port kamani-mani", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "110603", "secteur_libelle": "Commune de LUKOLELA", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": 4.85, "lat": -5.048048, "lon": 18.837029, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514348, "objet": 1}, {"fichier": "110600_110603_879514372_1_port-central-de-kikwit-onatra.jpg", "nom": "Port central de kikwit (ONATRA)", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "110603", "secteur_libelle": "Commune de LUKOLELA", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": 4.0, "lat": -5.032591, "lon": 18.834972, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514372, "objet": 1}, {"fichier": "110600_110603_879514400_1_baobab-kikwit.jpg", "nom": "Baobab/kikwit", "type_libelle": "Service financier", "statut": "En activité", "secteur": "110603", "secteur_libelle": "Commune de LUKOLELA", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879514400, "objet": 1}, {"fichier": "110600_110603_879514424_1_advans-kikwit.jpg", "nom": "Advans/kikwit", "type_libelle": "Service financier", "statut": "En activité", "secteur": "110603", "secteur_libelle": "Commune de LUKOLELA", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": 5.0, "lat": -5.032512, "lon": 18.830705, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514424, "objet": 1}, {"fichier": "111500_111503_879514449_1_airtel.jpg", "nom": "Airtel", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111503", "secteur_libelle": "Commune de PAY KONGILA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 4.1, "lat": -5.441154, "lon": 18.343087, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514449, "objet": 1}, {"fichier": "111500_111503_879514475_1_sans-nom.jpg", "nom": "Sans nom", "type_libelle": "Eau, cours d'eau, irrigation, source d'eau", "statut": "En activité", "secteur": "111503", "secteur_libelle": "Commune de PAY KONGILA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.116, "lat": -5.205655, "lon": 18.241137, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514475, "objet": 1}, {"fichier": "111500_111503_879514500_1_sans-nom.jpg", "nom": "Sans nom", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "111503", "secteur_libelle": "Commune de PAY KONGILA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 2.24, "lat": -4.920988, "lon": 18.207782, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514500, "objet": 1}, {"fichier": "111500_111503_879514551_1_radio-raki-venus-rfb.jpg", "nom": "Radio RAKI, Venus, RFB", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111503", "secteur_libelle": "Commune de PAY KONGILA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 4.775, "lat": -5.456855, "lon": 18.341901, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514551, "objet": 1}, {"fichier": "111500_111503_879514567_1_sous-division.jpg", "nom": "Sous-division", "type_libelle": "Service financier", "statut": "En activité", "secteur": "111503", "secteur_libelle": "Commune de PAY KONGILA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 4.9, "lat": -5.441312, "lon": 18.342415, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514567, "objet": 1}, {"fichier": "111500_111508_879514596_1_sous-division.jpg", "nom": "Sous division", "type_libelle": "Service financier", "statut": "En activité", "secteur": "111508", "secteur_libelle": "KITOY", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 3.3, "lat": -4.404604, "lon": 17.817925, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514596, "objet": 1}, {"fichier": "111500_111508_879514624_1_antenne-vodacom.jpg", "nom": "Antenne vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "Infrastructure dégradée", "secteur": "111508", "secteur_libelle": "KITOY", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.48, "lat": -4.404628, "lon": 17.815163, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514624, "objet": 1}, {"fichier": "111500_111508_879514657_1_radio-en-construction.jpg", "nom": "Radio en construction", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "Infrastructure dégradée", "secteur": "111508", "secteur_libelle": "KITOY", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.1, "lat": -4.40368, "lon": 17.818988, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514657, "objet": 1}, {"fichier": "111500_111508_879514690_1_bureau-proader.jpg", "nom": "Bureau PROADER", "type_libelle": "Agent mobile Banking", "statut": "En activité", "secteur": "111508", "secteur_libelle": "KITOY", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.266, "lat": -4.405215, "lon": 17.817065, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514690, "objet": 1}, {"fichier": "111500_111509_879514753_1_marche-de-demi-gros.jpg", "nom": "Marché de demi gros", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "Infrastructure dégradée", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.1, "lat": -4.78522, "lon": 17.789398, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514753, "objet": 1}, {"fichier": "111500_111509_879514773_1_antennes-vodacom-et-orange.jpg", "nom": "Antennes vodacom et orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.05, "lat": -4.78646, "lon": 17.796413, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514773, "objet": 1}, {"fichier": "111500_111509_879514811_1_radio.jpg", "nom": "Radio", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.716, "lat": -4.775635, "lon": 17.862063, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514811, "objet": 1}, {"fichier": "111500_111509_879514851_1_antenne-vodacom.jpg", "nom": "Antenne vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 1.4, "lat": -4.77495, "lon": 17.871275, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514851, "objet": 1}, {"fichier": "111500_111509_879514903_1_rawbank.jpg", "nom": "Rawbank", "type_libelle": "Service financier", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 4.633, "lat": -4.773285, "lon": 17.884148, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514903, "objet": 1}, {"fichier": "111500_111509_879514950_1_antenne-orange.jpg", "nom": "Antenne orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 4.6, "lat": -4.76578, "lon": 17.909735, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879514950, "objet": 1}, {"fichier": "111500_111509_879515021_1_radio-rtnc-antenne-de-vodacom.jpg", "nom": "Radio rtnc, antenne de vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 300.0, "lat": -4.775951, "lon": 17.893854, "geom_type": "Point", "enqueteur": "ALFA-11", "id": 879515021, "objet": 1}, {"fichier": "111500_111509_879515035_1_batiment-administratif.jpg", "nom": "Bâtiment administratif", "type_libelle": "Ouvrage d'art (pont, bac, débarcadère, barrière)", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 300.0, "lat": -4.772646, "lon": 17.898931, "geom_type": "Point", "enqueteur": "ALFA-11", "id": 879515035, "objet": 1}, {"fichier": "111500_111509_879515066_1_ekkleza.jpg", "nom": "Ekkleza", "type_libelle": "Service financier", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 400.0, "lat": -4.765122, "lon": 17.914113, "geom_type": "Point", "enqueteur": "ALFA-11", "id": 879515066, "objet": 1}, {"fichier": "111500_111508_879517610_1_route-munzabala-kitoyi.jpg", "nom": "ROUTE MUNZABALA - KITOYI", "type_libelle": "Route, piste, voie navigable", "statut": "Partiellement actif", "secteur": "111508", "secteur_libelle": "KITOY", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879517610, "objet": 1}, {"fichier": "110600_110603_879517654_1_inspection-du-developpement-rural.jpg", "nom": "inspection du développement rural", "type_libelle": "Autres (à préciser)", "statut": "En activité", "secteur": "110603", "secteur_libelle": "Commune de LUKOLELA", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879517654, "objet": 1}, {"fichier": "110600_110605_879517680_1_sans-nom.jpg", "nom": "(sans nom)", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "110605", "secteur_libelle": "Commune de KABUDI", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879517680, "objet": 1}, {"fichier": "110600_110605_879517706_1_boutique-la-clemence.jpg", "nom": "boutique la clemence", "type_libelle": "Agent mobile Banking", "statut": "En activité", "secteur": "110605", "secteur_libelle": "Commune de KABUDI", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879517706, "objet": 1}, {"fichier": "110600_110605_879517756_1_site-de-la-paie-a-la-sous-division-de-epst.jpg", "nom": "site de la paie à la sous division de EPST", "type_libelle": "Service financier", "statut": "En activité", "secteur": "110605", "secteur_libelle": "Commune de KABUDI", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879517756, "objet": 1}, {"fichier": "110600_110605_879517789_1_antenne-airtel.jpg", "nom": "antenne airtel", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "110605", "secteur_libelle": "Commune de KABUDI", "territoire": "Ville de KIKWIT", "localite": "", "date": "2026-09-27", "precision": null, "lat": null, "lon": null, "geom_type": null, "enqueteur": "ALFA-01", "id": 879517789, "objet": 1}, {"fichier": "111500_111509_879579562_1_ets-lumbey.jpg", "nom": "Ets lumbey", "type_libelle": "Agent mobile Banking", "statut": "En activité", "secteur": "111509", "secteur_libelle": "MASI MANIMBA", "territoire": "MASIMANIMBA", "localite": "", "date": "2026-09-27", "precision": 5.900000095367432, "lat": -4.774389, "lon": 17.89642, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 879579562, "objet": 1}, {"fichier": "101400_101408_880659239_1_route-kidima.jpg", "nom": "ROUTE KIDIMA", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "101408", "secteur_libelle": "101408", "territoire": "KENGE", "localite": "", "date": "2026-09-28", "precision": 4.974, "lat": -4.798787, "lon": 17.389523, "geom_type": "LineString", "enqueteur": "ALFA-01", "id": 880659239, "objet": 1}, {"fichier": "101400_101408_880659257_1_centre-d-affaires.jpg", "nom": "CENTRE D AFFAIRES", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "101408", "secteur_libelle": "101408", "territoire": "KENGE", "localite": "", "date": "2026-09-28", "precision": 6.6579999923706055, "lat": -5.088, "lon": 17.371588, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 880659257, "objet": 1}, {"fichier": "101400_101408_880659276_1_entrepot-kidima.jpg", "nom": "ENTREPÔT KIDIMA", "type_libelle": "Autres (à préciser)", "statut": "En activité", "secteur": "101408", "secteur_libelle": "101408", "territoire": "KENGE", "localite": "", "date": "2026-09-28", "precision": 4.5289998054504395, "lat": -5.087351, "lon": 17.371936, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 880659276, "objet": 1}, {"fichier": "101400_101406_881711744_1_centre-d-activite.jpg", "nom": "Centre d'activité", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "Partiellement actif", "secteur": "101406", "secteur_libelle": "KOLOKOSO", "territoire": "KENGE", "localite": "", "date": "2026-09-29", "precision": 5.28000020980835, "lat": -4.240899, "lon": 17.541002, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 881711744, "objet": 1}, {"fichier": "101400_101406_882951997_1_vodacom.jpg", "nom": "Vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "101406", "secteur_libelle": "KOLOKOSO", "territoire": "KENGE", "localite": "", "date": "2026-09-30", "precision": 2.763000011444092, "lat": -4.462809, "lon": 17.414892, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 882951997, "objet": 1}, {"fichier": "101400_101406_882952000_1_1.jpg", "nom": "1", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "101406", "secteur_libelle": "KOLOKOSO", "territoire": "KENGE", "localite": "", "date": "2026-09-30", "precision": 2.7, "lat": -4.468162, "lon": 17.412803, "geom_type": "LineString", "enqueteur": "NOVA-63", "id": 882952000, "objet": 1}, {"fichier": "101400_101406_882952005_1_shop-nerrhee.jpg", "nom": "Shop Nerrhée", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "101406", "secteur_libelle": "KOLOKOSO", "territoire": "KENGE", "localite": "", "date": "2026-09-30", "precision": 3.200000047683716, "lat": -4.463713, "lon": 17.41395, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 882952005, "objet": 1}, {"fichier": "101400_101406_882952067_1_snhr.jpg", "nom": "SNHR", "type_libelle": "Eau, cours d'eau, irrigation, source d'eau", "statut": "En activité", "secteur": "101406", "secteur_libelle": "KOLOKOSO", "territoire": "KENGE", "localite": "", "date": "2026-09-30", "precision": 6.127999782562256, "lat": -4.462169, "lon": 17.413418, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 882952067, "objet": 1}, {"fichier": "101400_101406_882952074_1_antenne.jpg", "nom": "Antenne", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "101406", "secteur_libelle": "KOLOKOSO", "territoire": "KENGE", "localite": "", "date": "2026-09-30", "precision": 6.099999904632568, "lat": -4.462268, "lon": 17.414452, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 882952074, "objet": 1}, {"fichier": "101400_101401_884333059_1_mfhpek-coopec.jpg", "nom": "MFHPEK COOPEC", "type_libelle": "AVEC, tontine, coopérative, association", "statut": "En activité", "secteur": "101401", "secteur_libelle": "Commune de KENGE II", "territoire": "KENGE", "localite": "", "date": "2026-10-02", "precision": 20.899999618530273, "lat": -4.820861, "lon": 17.039641, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 884333059, "objet": 1}, {"fichier": "101400_101401_884333504_1_copak.jpg", "nom": "COPAK", "type_libelle": "AVEC, tontine, coopérative, association", "statut": "En activité", "secteur": "101401", "secteur_libelle": "Commune de KENGE II", "territoire": "KENGE", "localite": "", "date": "2026-10-02", "precision": 300.0, "lat": -4.819672, "lon": 17.040471, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 884333504, "objet": 1}, {"fichier": "101400_101401_884333540_1_tmb.jpg", "nom": "TMB", "type_libelle": "Service financier", "statut": "En activité", "secteur": "101401", "secteur_libelle": "Commune de KENGE II", "territoire": "KENGE", "localite": "", "date": "2026-10-02", "precision": 45.45199966430664, "lat": -4.824737, "lon": 17.035708, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 884333540, "objet": 1}, {"fichier": "101400_101401_884333648_1_federation.jpg", "nom": "Fédération", "type_libelle": "AVEC, tontine, coopérative, association", "statut": "En activité", "secteur": "101401", "secteur_libelle": "Commune de KENGE II", "territoire": "KENGE", "localite": "", "date": "2026-10-02", "precision": 9.51200008392334, "lat": -4.826205, "lon": 17.027159, "geom_type": "Point", "enqueteur": "NOVA-63", "id": 884333648, "objet": 1}, {"fichier": "151600_151602_888324852_1_marche.jpg", "nom": "marché", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "Partiellement actif", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-07", "precision": 4.0329999923706055, "lat": -2.777672, "lon": 16.994273, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 888324852, "objet": 1}, {"fichier": "151600_151602_888324872_1_antenne-orange.jpg", "nom": "antenne orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-07", "precision": 11.859999656677246, "lat": -2.778366, "lon": 16.995807, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 888324872, "objet": 1}, {"fichier": "151600_151602_888324884_1_route-mbala-2-mushi.jpg", "nom": "route mbala 2 - mushi", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-07", "precision": 4.481, "lat": -2.777888, "lon": 16.992612, "geom_type": "LineString", "enqueteur": "ALFA-01", "id": 888324884, "objet": 1}, {"fichier": "151600_151602_888978161_1_antenne-vodacom.jpg", "nom": "antenne vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-08", "precision": 9.930999755859375, "lat": -2.970654, "lon": 17.098045, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 888978161, "objet": 1}, {"fichier": "151600_151602_888979118_1_marche-ndjokele.jpg", "nom": "marche ndjokele", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "Partiellement actif", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-08", "precision": 4.915999889373779, "lat": -2.971235, "lon": 17.096794, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 888979118, "objet": 1}, {"fichier": "151600_151602_889211739_1_chez-le-chef-du-village.jpg", "nom": "chez le chef du village", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-08", "precision": 5.158999919891357, "lat": -2.973756, "lon": 17.096723, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 889211739, "objet": 1}, {"fichier": "151600_151602_889211754_1_troncon-ndjokele-mushi-sur-la-riviere-mfimi.jpg", "nom": "tronçon ndjokele mushi sur la rivière mfimi", "type_libelle": "Route, piste, voie navigable", "statut": "Partiellement actif", "secteur": "151602", "secteur_libelle": "BABOMA NORD", "territoire": "MUSHIE", "localite": "", "date": "2026-10-08", "precision": 3.513, "lat": -2.974747, "lon": 17.098216, "geom_type": "LineString", "enqueteur": "ALFA-01", "id": 889211754, "objet": 1}, {"fichier": "151600_151601_889835496_1_antenne-vodacom.jpg", "nom": "antenne vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-09", "precision": 4.122000217437744, "lat": -3.007681, "lon": 16.930575, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 889835496, "objet": 1}, {"fichier": "151600_151601_889843751_1_piste-aerodrome-devenu-la-brousse.jpg", "nom": "piste aérodrome devenu la brousse", "type_libelle": "Route, piste, voie navigable", "statut": "Infrastructure dégradée", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-09", "precision": 3.0290000438690186, "lat": -3.009327, "lon": 16.925998, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 889843751, "objet": 1}, {"fichier": "151600_151601_892769811_1_antenne-orange.jpg", "nom": "antenne orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-13", "precision": 3.11299991607666, "lat": -3.010074, "lon": 16.923393, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 892769811, "objet": 1}, {"fichier": "151600_151601_892769863_1_marche-central-de-mushi.jpg", "nom": "marché central de mushi", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-13", "precision": 7.2820000648498535, "lat": -3.010139, "lon": 16.922831, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 892769863, "objet": 1}, {"fichier": "151600_151601_892769881_1_bureau-et-centre.jpg", "nom": "bureau et centre", "type_libelle": "Autres (à préciser)", "statut": "En activité", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-13", "precision": 5.7179999351501465, "lat": -3.01094, "lon": 16.924129, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 892769881, "objet": 1}, {"fichier": "151600_151601_892769899_1_eglise-catholique.jpg", "nom": "eglise catholique", "type_libelle": "Autres (à préciser)", "statut": "Partiellement actif", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-13", "precision": 3.7899999618530273, "lat": -3.016571, "lon": 16.927128, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 892769899, "objet": 1}, {"fichier": "151600_151601_892769919_1_port-de-mushi.jpg", "nom": "port de mushi", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-13", "precision": 8.07699966430664, "lat": -3.024932, "lon": 16.923205, "geom_type": "Point", "enqueteur": "ALFA-01", "id": 892769919, "objet": 1}, {"fichier": "151600_151601_892770006_1_troncon-mushi-nioki.jpg", "nom": "tronçon mushi nioki", "type_libelle": "Route, piste, voie navigable", "statut": "En activité", "secteur": "151601", "secteur_libelle": "Commune de MUSHIE", "territoire": "MUSHIE", "localite": "", "date": "2026-10-13", "precision": 4.122, "lat": -3.026317, "lon": 16.925144, "geom_type": "LineString", "enqueteur": "ALFA-01", "id": 892770006, "objet": 1}, {"fichier": "091600_091606_896923817_1_orange.jpg", "nom": "Orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "Infrastructure dégradée", "secteur": "091606", "secteur_libelle": "KIVULU", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-19", "precision": 4.0, "lat": -5.315245, "lon": 15.097343, "geom_type": "Point", "enqueteur": "BETA-172", "id": 896923817, "objet": 1}, {"fichier": "091600_091606_896923831_1_mawunzi.jpg", "nom": "Mawunzi", "type_libelle": "Ouvrage d'art (pont, bac, débarcadère, barrière)", "statut": "À l'arrêt", "secteur": "091606", "secteur_libelle": "KIVULU", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-19", "precision": 5.599999904632568, "lat": -5.316562, "lon": 15.09756, "geom_type": "Point", "enqueteur": "BETA-172", "id": 896923831, "objet": 1}, {"fichier": "091600_091609_897556629_1_marche-mbanza-ngoyo.jpg", "nom": "Marché mbanza ngoyo", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "091609", "secteur_libelle": "NTIMANSI", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-20", "precision": 1.5, "lat": -5.130129, "lon": 14.508076, "geom_type": "Polygon", "enqueteur": "BETA-172", "id": 897556629, "objet": 1}, {"fichier": "091600_091609_897556636_1_shop-maman-niangu.jpg", "nom": "Shop maman niangu", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091609", "secteur_libelle": "NTIMANSI", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-20", "precision": 5.199999809265137, "lat": -5.130425, "lon": 14.508698, "geom_type": "Point", "enqueteur": "BETA-172", "id": 897556636, "objet": 1}, {"fichier": "091600_091609_897556657_1_bureau-du-secteur-ntimansi.jpg", "nom": "Bureau du secteur ntimansi", "type_libelle": "Ouvrage d'art (pont, bac, débarcadère, barrière)", "statut": "En activité", "secteur": "091609", "secteur_libelle": "NTIMANSI", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-20", "precision": 4.300000190734863, "lat": -5.13228, "lon": 14.515658, "geom_type": "Point", "enqueteur": "BETA-172", "id": 897556657, "objet": 1}, {"fichier": "091600_091603_898388096_1_marche-nkolo.jpg", "nom": "Marché nkolo", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-21", "precision": 1.3, "lat": -5.444434, "lon": 14.873622, "geom_type": "Polygon", "enqueteur": "BETA-172", "id": 898388096, "objet": 1}, {"fichier": "091600_091603_898388106_1_paroisse-sacre-cur.jpg", "nom": "Paroisse sacré cœur", "type_libelle": "AVEC, tontine, coopérative, association", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-21", "precision": 1.7200000286102295, "lat": -5.44541, "lon": 14.874228, "geom_type": "Point", "enqueteur": "BETA-172", "id": 898388106, "objet": 1}, {"fichier": "091600_091603_898388117_1_antenne-orange.jpg", "nom": "Antenne Orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-21", "precision": 4.900000095367432, "lat": -5.445743, "lon": 14.87285, "geom_type": "Point", "enqueteur": "BETA-172", "id": 898388117, "objet": 1}, {"fichier": "091600_091603_899144064_1_antenne-airtel.jpg", "nom": "Antenne airtel", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-22", "precision": 2.9800000190734863, "lat": -5.221473, "lon": 14.922157, "geom_type": "Point", "enqueteur": "BETA-172", "id": 899144064, "objet": 1}, {"fichier": "091600_091603_899144086_1_marche-boko.jpg", "nom": "Marché boko", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "À l'arrêt", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-22", "precision": 1.816, "lat": -5.220434, "lon": 14.924389, "geom_type": "Polygon", "enqueteur": "BETA-172", "id": 899144086, "objet": 1}, {"fichier": "091600_091603_899144114_1_orange.jpg", "nom": "Orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-22", "precision": 3.4000000953674316, "lat": -5.243618, "lon": 14.884322, "geom_type": "Point", "enqueteur": "BETA-172", "id": 899144114, "objet": 1}, {"fichier": "091600_091603_900427255_1_bureau-territoire.jpg", "nom": "Bureau territoire", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 5.5329999923706055, "lat": -5.262536, "lon": 14.858626, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427255, "objet": 1}, {"fichier": "091600_091603_900427265_1_mb-ng.jpg", "nom": "MB/NG", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 2.5999999046325684, "lat": -5.257269, "lon": 14.855004, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427265, "objet": 1}, {"fichier": "091600_091603_900427275_1_antenne-de-mbanza-ngungu.jpg", "nom": "Antenne de Mbanza ngungu", "type_libelle": "Autres (à préciser)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 9.83899974822998, "lat": -5.257041, "lon": 14.855009, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427275, "objet": 1}, {"fichier": "091600_091603_900427280_1_shop-vodacom.jpg", "nom": "Shop vodacom", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 5.800000190734863, "lat": -5.25749, "lon": 14.860503, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427280, "objet": 1}, {"fichier": "091600_091603_900427289_1_equity-bcdc.jpg", "nom": "Équity BCDC", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 87.5999984741211, "lat": -5.257933, "lon": 14.860499, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427289, "objet": 1}, {"fichier": "091600_091603_900427301_1_shop-orange.jpg", "nom": "Shop Orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 100.0, "lat": -5.255856, "lon": 14.860968, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427301, "objet": 1}, {"fichier": "091600_091603_900427308_1_cuilgal.jpg", "nom": "Cuilgal", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 1.7799999713897705, "lat": -5.256136, "lon": 14.861175, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427308, "objet": 1}, {"fichier": "091600_091603_900427321_1_camec.jpg", "nom": "CAMEC", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 7.800000190734863, "lat": -5.255448, "lon": 14.861262, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427321, "objet": 1}, {"fichier": "091600_091603_900427328_1_shop-airtel.jpg", "nom": "Shop airtel", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091603", "secteur_libelle": "BOKO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 3.5799999237060547, "lat": -5.25525, "lon": 14.861443, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900427328, "objet": 1}, {"fichier": "091600_091607_900432280_1_agence-kwili-ngongo.jpg", "nom": "Agence kwili ngongo", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091607", "secteur_libelle": "KWILU NGONGO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 4.099999904632568, "lat": -5.508888, "lon": 14.700177, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900432280, "objet": 1}, {"fichier": "091600_091607_900432300_1_camec-kwilu-ngongo.jpg", "nom": "CAMEC kwilu ngongo", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091607", "secteur_libelle": "KWILU NGONGO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 7.460000038146973, "lat": -5.503587, "lon": 14.68524, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900432300, "objet": 1}, {"fichier": "091600_091607_900432310_1_coopec-mk.jpg", "nom": "COOPEC MK", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091607", "secteur_libelle": "KWILU NGONGO", "territoire": "MBANZA NGUNGU", "localite": "", "date": "2026-10-24", "precision": 4.599999904632568, "lat": -5.500145, "lon": 14.684522, "geom_type": "Point", "enqueteur": "BETA-172", "id": 900432310, "objet": 1}, {"fichier": "091300_091305_902113019_1_marche-nzobe.jpg", "nom": "Marché Nzobe", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "091305", "secteur_libelle": "TSANGA-SUD", "territoire": "LUKULA", "localite": "", "date": "2026-10-27", "precision": 1.816, "lat": -5.347806, "lon": 13.022922, "geom_type": "Polygon", "enqueteur": "ALFA-241", "id": 902113019, "objet": 1}, {"fichier": "091300_091305_902113088_1_siege.jpg", "nom": "Siège", "type_libelle": "Ouvrage d'art (pont, bac, débarcadère, barrière)", "statut": "En activité", "secteur": "091305", "secteur_libelle": "TSANGA-SUD", "territoire": "LUKULA", "localite": "", "date": "2026-10-27", "precision": 2.059999942779541, "lat": -5.348378, "lon": 13.022852, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 902113088, "objet": 1}, {"fichier": "091300_091305_902113129_1_rtcnk.jpg", "nom": "RTCNK", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091305", "secteur_libelle": "TSANGA-SUD", "territoire": "LUKULA", "localite": "", "date": "2026-10-27", "precision": 5.5, "lat": -5.343305, "lon": 13.024823, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 902113129, "objet": 1}, {"fichier": "091300_091304_902986918_1_lokole.jpg", "nom": "Lokole", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091304", "secteur_libelle": "PATU", "territoire": "LUKULA", "localite": "", "date": "2026-10-28", "precision": 4.079999923706055, "lat": -5.442293, "lon": 12.9003, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 902986918, "objet": 1}, {"fichier": "091300_091307_903728835_1_antenne-orange.jpg", "nom": "Antenne Orange", "type_libelle": "Télécommunications (antenne, couverture)", "statut": "En activité", "secteur": "091307", "secteur_libelle": "Cité de LUKULA", "territoire": "LUKULA", "localite": "", "date": "2026-10-29", "precision": 2.071000099182129, "lat": -5.386057, "lon": 12.936883, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 903728835, "objet": 1}, {"fichier": "091300_091307_903728856_1_coopec-cac-lukula.jpg", "nom": "COOPEC CAC LUKULA", "type_libelle": "Service financier", "statut": "En activité", "secteur": "091307", "secteur_libelle": "Cité de LUKULA", "territoire": "LUKULA", "localite": "", "date": "2026-10-29", "precision": 5.099999904632568, "lat": -5.393155, "lon": 12.939403, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 903728856, "objet": 1}, {"fichier": "091300_091307_903728885_1_bureau-adm-du-territoire-lukula.jpg", "nom": "Bureau adm du territoire lukula", "type_libelle": "AVEC, tontine, coopérative, association", "statut": "En activité", "secteur": "091307", "secteur_libelle": "Cité de LUKULA", "territoire": "LUKULA", "localite": "", "date": "2026-10-29", "precision": 3.440000057220459, "lat": -5.388233, "lon": 12.941295, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 903728885, "objet": 1}, {"fichier": "091300_091307_903764771_1_rmb.jpg", "nom": "RMB", "type_libelle": "Marché / Entreprise chef de ville / pôle économique", "statut": "En activité", "secteur": "091307", "secteur_libelle": "Cité de LUKULA", "territoire": "LUKULA", "localite": "", "date": "2026-10-29", "precision": 5.199999809265137, "lat": -5.38455, "lon": 12.934746, "geom_type": "Point", "enqueteur": "ALFA-241", "id": 903764771, "objet": 1}]</script>
+<script src="../lib/leaflet/leaflet.js"></script>
+<script>
+const PHOTOS = JSON.parse(document.getElementById('donnees-photos').textContent);
+const figures = [...document.querySelectorAll('figure.photo')];
+const filtres = {territoire:'', type:'', recherche:''};
+const voile = document.getElementById('voile');
+let miniCarte = null, miniMarqueur = null, miniCercle = null, indexOuvert = null;
+
+function nb(v, d){ return (v===null||v===undefined||v==='') ? '—'
+  : Number(v).toLocaleString('fr-FR', {minimumFractionDigits:d||0, maximumFractionDigits:d||0}); }
+function echappe(texte){ return String(texte===null||texte===undefined?'':texte)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function classePrecision(p){
+  if(p===null||p===undefined||p==='') return ['inconnue',''];
+  const v = Number(p);
+  if(v <= 10) return ['bonne','ok'];
+  if(v <= 20) return ['correcte','moyen'];
+  return ['faible','faible'];
+}
+
+function visibles(){
+  return figures.filter(f => f.style.display !== 'none');
+}
+
+function appliquer(){
+  let n = 0;
+  figures.forEach(figure => {
+    const ok = (!filtres.territoire || figure.dataset.territoire === filtres.territoire)
+      && (!filtres.type || figure.dataset.type === filtres.type)
+      && (!filtres.recherche || figure.dataset.recherche.includes(filtres.recherche));
+    figure.style.display = ok ? '' : 'none';
+    if (ok) n += 1;
+  });
+  document.getElementById('compte').textContent = n + ' photo' + (n > 1 ? 's' : '');
+  document.getElementById('vide').style.display = n ? 'none' : 'block';
+}
+
+function lienRecit(p){
+  if(p.lat===null||p.lat===undefined) return '../recit/#c3';
+  return '../recit/?lat=' + Number(p.lat).toFixed(5) + '&lon=' +
+    Number(p.lon).toFixed(5) + '&z=17#c3';
+}
+
+function dessinerMiniCarte(p){
+  const bloc = document.getElementById('bloc-carte');
+  const conteneur = document.getElementById('detail-carte');
+  if(p.lat===null||p.lat===undefined){
+    bloc.style.display = 'none';
+    return;
+  }
+  bloc.style.display = '';
+  if(typeof L === 'undefined'){
+    conteneur.innerHTML = '<p class="sans-carte">Mini-carte indisponible sur ce poste ' +
+      '(bibliothèque cartographique non chargée). La position reste consultable dans la ' +
+      'carte du récit.</p>';
+    return;
+  }
+  conteneur.innerHTML = '';
+  try {
+    if(!miniCarte){
+      miniCarte = L.map(conteneur, {zoomControl:true, attributionControl:true,
+        scrollWheelZoom:false}).setView([p.lat, p.lon], 17);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {maxZoom:19, attribution:'© OpenStreetMap'}).addTo(miniCarte);
+    }
+    miniCarte.setView([p.lat, p.lon], 17);
+    if(miniMarqueur) miniMarqueur.remove();
+    if(miniCercle) miniCercle.remove();
+    if(p.precision){
+      miniCercle = L.circle([p.lat, p.lon], {radius:Number(p.precision), color:'#B26B00',
+        weight:1.4, fillColor:'#F59E0B', fillOpacity:.16, interactive:false}).addTo(miniCarte);
+    }
+    miniMarqueur = L.circleMarker([p.lat, p.lon], {radius:7, color:'#fff', weight:2,
+      fillColor:'#B00020', fillOpacity:1}).addTo(miniCarte);
+    setTimeout(() => miniCarte.invalidateSize(), 60);
+  } catch (e) {
+    conteneur.innerHTML = '<p class="sans-carte">Mini-carte non affichable : ' +
+      echappe(e.message) + '</p>';
+  }
+}
+
+function remplir(i){
+  const p = PHOTOS[i];
+  if(!p) return;
+  indexOuvert = i;
+  const [libelle, classe] = classePrecision(p.precision);
+  document.getElementById('detail-img').src = p.fichier;
+  document.getElementById('detail-img').alt = p.nom + ' — ' + p.type_libelle + ', ' +
+    p.secteur_libelle;
+  document.getElementById('detail-titre').textContent = p.nom;
+  document.getElementById('detail-sous').textContent = p.type_libelle +
+    (p.statut ? ' · ' + p.statut : '') + ' · ' + p.secteur_libelle + ' (' + p.secteur + ') — ' +
+    p.territoire;
+  const lignes = [
+    ['Type d’infrastructure', echappe(p.type_libelle)],
+    ['Statut de fonctionnement', echappe(p.statut || 'non renseigné')],
+    ['Secteur', echappe(p.secteur_libelle) + ' (' + echappe(p.secteur) + ')'],
+    ['Territoire', echappe(p.territoire)],
+    ['Localité déclarée', echappe(p.localite || '—')],
+    ['Date du relevé', echappe(p.date || '—')],
+    ['Précision du GPS', (p.precision===null||p.precision===undefined||p.precision==='')
+      ? 'non renseignée'
+      : nb(p.precision, 1) + ' m <span class="badge ' + classe + '">' + libelle + '</span>'],
+    ['Coordonnées', (p.lat===null||p.lat===undefined) ? 'non relevées'
+      : nb(p.lat, 5) + ' ; ' + nb(p.lon, 5)],
+    ['Enquêteur', echappe(p.enqueteur || '—')],
+  ];
+  document.getElementById('detail-fiche').innerHTML = lignes
+    .map(l => '<dt>' + l[0] + '</dt><dd>' + l[1] + '</dd>').join('');
+  const versRecit = document.getElementById('lien-recit');
+  versRecit.href = lienRecit(p);
+  versRecit.setAttribute('aria-disabled', (p.lat===null||p.lat===undefined) ? 'true' : 'false');
+  document.getElementById('lien-image').href = p.fichier;
+  dessinerMiniCarte(p);
+  const liste = visibles();
+  const rang = liste.findIndex(f => Number(f.dataset.index) === i);
+  document.getElementById('compteur').textContent = (rang + 1) + ' / ' + liste.length;
+  document.getElementById('prec').disabled = rang <= 0;
+  document.getElementById('suiv').disabled = rang < 0 || rang >= liste.length - 1;
+  ouvrirVoile();
+}
+
+function ouvrirVoile(){
+  voile.classList.add('ouvert');
+  voile.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('voile-ouvert');
+  document.getElementById('fermer').focus();
+}
+
+function fermer(){
+  voile.classList.remove('ouvert');
+  voile.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('voile-ouvert');
+  indexOuvert = null;
+  if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+  if(figures.length) figures[0].focus({preventScroll:true});
+}
+
+function naviguer(pas){
+  const liste = visibles().map(f => Number(f.dataset.index));
+  if(!liste.length) return;
+  const rang = liste.indexOf(indexOuvert);
+  const suivant = rang + pas;
+  if(suivant < 0 || suivant >= liste.length) return;
+  remplir(liste[suivant]);
+  history.replaceState(null, '', '#' + PHOTOS[liste[suivant]].fichier);
+}
+
+figures.forEach(figure => {
+  const i = Number(figure.dataset.index);
+  figure.addEventListener('click', () => remplir(i));
+  figure.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); remplir(i); }
+  });
+});
+document.getElementById('fermer').onclick = fermer;
+document.getElementById('prec').onclick = () => naviguer(-1);
+document.getElementById('suiv').onclick = () => naviguer(1);
+voile.addEventListener('click', e => { if(e.target === voile) fermer(); });
+document.addEventListener('keydown', e => {
+  if(!voile.classList.contains('ouvert')) return;
+  if(e.key === 'Escape'){ e.preventDefault(); fermer(); }
+  if(e.key === 'ArrowLeft'){ e.preventDefault(); naviguer(-1); }
+  if(e.key === 'ArrowRight'){ e.preventDefault(); naviguer(1); }
+});
+document.getElementById('f-territoire').onchange = e => {filtres.territoire = e.target.value; appliquer();};
+document.getElementById('f-type').onchange = e => {filtres.type = e.target.value; appliquer();};
+document.getElementById('f-recherche').oninput = e => {filtres.recherche = e.target.value.toLowerCase(); appliquer();};
+
+/* lien direct : ../photos/#nom-du-fichier.jpg ouvre la fiche correspondante */
+(function ouvrirDepuisAdresse(){
+  const cible = decodeURIComponent(location.hash.replace('#', ''));
+  if(!cible) return;
+  const i = PHOTOS.findIndex(p => p.fichier === cible);
+  if(i >= 0) remplir(i);
+})();
+(function depuisLeRecit(){
+  /* ../photos/?photoid=123&objet=1 : arrivée depuis une infobulle de la carte */
+  const p = new URLSearchParams(location.search);
+  const id = p.get('photoid');
+  if(!id) return;
+  const objet = p.get('objet');
+  const i = PHOTOS.findIndex(ph => String(ph.id) === String(id) &&
+    (!objet || String(ph.objet) === String(objet)));
+  if(i >= 0) remplir(i);
+})();
+</script>
+</body>
+</html>
